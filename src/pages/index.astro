@@ -1,0 +1,28 @@
+---
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource/gochi-hand";
+import Stack from "../components/home/Stack.astro";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="An interactive tool vending machine by Rameena Jalil." />
+    <title>Rameena’s Tool Machine</title>
+  </head>
+  <body>
+    <main><Stack /></main>
+    <script>
+      import { initStack } from "../animations/stack";
+      initStack();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root { --font-bricolage: "Bricolage Grotesque Variable", system-ui, sans-serif; --font-hand: "Gochi Hand", cursive; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-width: 320px; background: #fdeab8; }
+</style>

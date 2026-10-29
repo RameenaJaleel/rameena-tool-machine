@@ -1,0 +1,290 @@
+---
+/**
+ * Stack — "Pick a tool. See what it does." A vending-machine tool picker
+ * (Figma: Stack — Vending machine, 896:467). Tile art in /public/images/stack/.
+ * The one-line "what it does" text per tool lives in `tools` below — edit it freely.
+ * Behaviour: src/animations/stack.ts. Everything the script changes (tray, receipt,
+ * display) is real markup here so the scoped styles below apply to it.
+ */
+type Tool = { code: string; name: string; img: string; desc: string } | null;
+const groups: { letter: string; label: string; tools: Tool[] }[] = [
+  { letter: "A", label: "DESIGN", tools: [
+    { code: "A1", name: "Figma", img: "figma", desc: "Interface design and prototyping" },
+    { code: "A2", name: "Framer", img: "framer", desc: "Websites and interactive prototypes" },
+    { code: "A3", name: "Miro", img: "miro", desc: "Whiteboards for mapping and workshops" },
+    { code: "A4", name: "After Effects", img: "after-effects", desc: "Motion and animation" },
+    { code: "A5", name: "Higgsfield", img: "higgsfield", desc: "AI video and image generation" }, null] },
+  { letter: "B", label: "BUILD", tools: [
+    { code: "B1", name: "Cursor", img: "cursor", desc: "AI code editor" },
+    { code: "B2", name: "VS Code", img: "vscode", desc: "Code editor" },
+    { code: "B3", name: "GitHub", img: "github", desc: "Code hosting and version control" },
+    { code: "B4", name: "Docker", img: "docker", desc: "Containers for running apps" },
+    { code: "B5", name: "Supabase", img: "supabase", desc: "Database, auth and storage" },
+    { code: "B6", name: "Cloudflare", img: "cloudflare", desc: "Hosting and edge network" }] },
+  { letter: "C", label: "AUTOMATE + AI", tools: [
+    { code: "C1", name: "Claude", img: "claude", desc: "AI for thinking, writing and building." },
+    { code: "C2", name: "Codex", img: "codex", desc: "AI coding agent" },
+    { code: "C3", name: "n8n", img: "n8n", desc: "Workflow automation" },
+    { code: "C4", name: "Wispr Flow", img: "wispr-flow", desc: "Voice dictation" }, null, null] },
+  { letter: "D", label: "TEAM", tools: [
+    { code: "D1", name: "Notion", img: "notion", desc: "Docs and project notes" },
+    { code: "D2", name: "Slack", img: "slack", desc: "Team chat" },
+    { code: "D3", name: "ClickUp", img: "clickup", desc: "Tasks and project tracking" },
+    { code: "D4", name: "Teams", img: "teams", desc: "Meetings and calls" }, null, null] },
+];
+const { v2 = false } = Astro.props; // v2: hide the empty "coming soon" slots (recruiter copy)
+const WAVE = "M0 40 L0 24 C 160 6, 340 6, 520 20 S 880 36, 1080 20 S 1330 6, 1440 18 L1440 40 Z";
+const rows = v2 ? groups.map((g) => ({ ...g, tools: g.tools.filter(Boolean) })) : groups; // v2: no empty slots at all
+const total = groups.flatMap((g) => g.tools).filter(Boolean).length;
+const keypad = ["A", "B", "C", "D", "1", "2", "3", "4", "5", "6", "ok", "x"];
+// sparkles around the dispensed tool (Figma: x, y, size in the 790 x 124 tray)
+const stars = [[247, 47, 18], [537, 37, 14], [607, 75, 10], [197, 81, 12], [297, 89, 8], [497, 89, 9]];
+---
+
+<section id="stack" class:list={["stack", { "no-empty": v2 }]} data-stack aria-labelledby="stack-title">
+  <div class="s-inner">
+    <header class="head" data-hr>
+      <p class="eyebrow">MY STACK</p>
+      <h2 id="stack-title">Pick a tool. See what it does.</h2>
+      <p class="sub">I don't collect tools for the sake of it. These are the ones that help me think, design, build, and ship.</p>
+    </header>
+
+    <div class="machine" data-hr data-hr-delay="100">
+      <p class="coins" aria-hidden="true">(no coins needed)</p>
+      <i class="bevel" aria-hidden="true"></i>
+      <div class="top-bar" aria-hidden="true">
+        <span class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></span>
+        <span class="plate">RAMEENA’S &nbsp;·&nbsp; TOOL MACHINE &nbsp;·&nbsp; {total} SLOTS</span>
+        <span class="lights ghost"></span>
+      </div>
+      <i class="screw sc1"></i><i class="screw sc2"></i><i class="screw sc3"></i><i class="screw sc4"></i>
+
+      <div class="body">
+        <div class="glass" role="group" aria-label="Tools">
+          {rows.map((g) => (
+            <div class="g-row">
+              <div class="g-label"><b>{g.letter}</b><span>{g.label}</span></div>
+              <div class="g-tiles">
+                {g.tools.map((t) =>
+                  t ? (
+                    <div class="cell">
+                      <button type="button" class="tile" data-code={t.code} data-name={t.name} data-desc={t.desc} data-group={g.label} aria-pressed="false" aria-label={`${t.code} ${t.name}: ${t.desc}`}>
+                        <img src={`/images/stack/${t.img}.png`} alt="" width="76" height="76" loading="lazy" decoding="async" />
+                        <i class="coil" aria-hidden="true"></i>
+                      </button>
+                      <i class="ledge" aria-hidden="true"></i>
+                      <span class="lab"><em>{t.code}</em><b>{t.name}</b></span>
+                    </div>
+                  ) : (
+                    <div class="cell empty" aria-hidden="true">
+                      <span class="slot"><span class="plus">+</span><i class="coil"></i></span>
+                      <i class="ledge"></i>
+                      <span class="lab soon">coming soon</span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <aside class="panel">
+          <div class="display" aria-live="polite">
+            <p class="d-k">NOW SELECTED <i></i></p>
+            <p class="d-name" data-dname>PICK A TOOL</p>
+            <p class="d-sub" data-dsub>{total} ready</p>
+          </div>
+          <div class="keys" role="group" aria-label="Keypad">
+            {keypad.map((k) => <button type="button" class="key" data-key={k} aria-label={k === "ok" ? "Confirm" : k === "x" ? "Clear" : `Key ${k}`}>{k === "ok" ? "✓" : k === "x" ? "×" : k}</button>)}
+          </div>
+          <p class="p-k">INSERT CURIOSITY</p>
+          <i class="slot-bar coin" aria-hidden="true"></i>
+          <p class="p-k p-receipt">RECEIPT</p>
+          <i class="slot-bar rslot" aria-hidden="true"></i>
+          <div class="rclip" aria-hidden="true">
+            <div class="paper" data-receipt hidden>
+              <p class="r-top">RAMEENA’S TOOL MACHINE</p>
+              <p class="r-order" data-rorder>ORDER C1</p>
+              <p class="r-name" data-rname>Claude</p>
+              <hr />
+              <p class="r-desc" data-rdesc></p>
+              <hr />
+              <p class="r-total">TOTAL: 1 shipped tool</p>
+              <i class="barcode"></i>
+              <p class="r-more">come back for more</p>
+            </div>
+          </div>
+        </aside>
+
+        <div class="tray">
+          <i class="shade" aria-hidden="true"></i>
+          <p class="p-k">TAKE YOUR TOOL</p>
+          <div class="tray-in" data-tray>
+            <p class="tray-hint" data-hint>pick a slot</p>
+            <div class="dispensed" data-drop hidden>
+              <i class="glow" aria-hidden="true"></i>
+              {stars.map(([x, y, s]) => <i class="star" aria-hidden="true" style={`left:${(x / 790 * 100).toFixed(2)}%;top:${(y / 124 * 100).toFixed(2)}%;width:${s}px;height:${s}px`}></i>)}
+              <span class="dtile"><img data-dimg src="/images/stack/claude.png" alt="" width="96" height="96" /></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feet" aria-hidden="true"><i></i><i></i></div>
+    </div>
+    <p class="more" data-hr>{v2 ? "Always learning." : "More tools coming soon. Always learning."}</p>
+  </div>
+  {v2 && <svg class="edge" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true"><path d={WAVE} /></svg>}
+</section>
+
+<style>
+  [hidden] { display: none !important; }
+  .stack {
+    position: relative; font-family: var(--font-bricolage); color: #16213a; --t: clamp(54px, 5.3vw, 76px);
+    padding: clamp(50px, 6vw, 86px) 22px clamp(50px, 6vw, 84px);
+    background: #fff3e6;
+    overflow: hidden;
+  }
+  .s-inner { max-width: 1180px; margin: 0 auto; position: relative; }
+  .head { text-align: center; }
+  .eyebrow { margin: 0 0 14px; font: 600 12.5px/1 var(--font-bricolage); letter-spacing: 0.26em; color: #a37a1e; }
+  h2 { margin: 0; font: 800 clamp(32px, 4vw, 56px)/1.1 var(--font-bricolage); letter-spacing: -0.02em; color: #16213a; }
+  .sub { margin: 16px auto 0; max-width: 780px; font-size: clamp(14.5px, 1.2vw, 17px); line-height: 1.5; color: #6a5d63; }
+  .coins { position: absolute; right: 6%; top: -34px; margin: 0; font: 400 clamp(20px, 2vw, 27px)/1 var(--font-hand); color: #e8663d; transform: rotate(-4deg); }
+
+  /* machine body */
+  .machine { position: relative; margin-top: clamp(40px, 4.4vw, 62px); border-radius: 46px; padding: 18px clamp(20px, 3vw, 31px) 31px; background: linear-gradient(180deg, #2b3963, #0d1630); border: 5px solid #f6e2a4; filter: drop-shadow(0 28px 24px rgba(23, 33, 59, 0.4)); color: #f6ebcb; }
+  .bevel { position: absolute; inset: 7px; border: 2px solid rgba(255, 255, 255, 0.07); border-radius: 36px; pointer-events: none; }
+  .top-bar { position: relative; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .lights { display: flex; gap: 9px; width: 96px; padding-left: 26px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; }
+  .lights .r { background: #ff5f57; box-shadow: 0 0 8px rgba(255, 95, 87, 0.7); }
+  .lights .y { background: #febc2e; box-shadow: 0 0 8px rgba(254, 188, 46, 0.7); }
+  .lights .g { background: #28c840; box-shadow: 0 0 8px rgba(40, 200, 64, 0.7); }
+  .plate { padding: 12px 34px 11px; border-radius: 20px; background: linear-gradient(180deg, #f6e2a4, #b8923f); color: #16213a; font: 800 clamp(10.5px, 1vw, 13px)/1 var(--font-bricolage); letter-spacing: 0.19em; white-space: nowrap; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.35)); }
+  .screw { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fbe9b0, #c9a04a 55%, #7a5a1c); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+  .screw::after { content: ""; position: absolute; left: 3px; right: 3px; top: 7px; height: 2px; border-radius: 1px; background: rgba(90, 69, 21, 0.8); transform: rotate(-35deg); }
+  .sc1 { left: 17px; top: 17px; } .sc2 { right: 17px; top: 17px; } .sc3 { left: 17px; bottom: 17px; } .sc4 { right: 17px; bottom: 17px; }
+
+  .body { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) clamp(214px, 24%, 274px); gap: 24px 24px; grid-template-areas: "glass panel" "tray panel"; }
+
+  /* glass window */
+  .glass { grid-area: glass; position: relative; border: 3px solid rgba(216, 178, 94, 0.7); border-radius: 26px; padding: 22px 14px 8px 16px; background: linear-gradient(180deg, #1d2a52, #08101f); overflow: hidden; }
+  .glass::before { content: ""; position: absolute; left: 6%; right: 6%; top: -20%; height: 60%; background: radial-gradient(ellipse at 50% 0%, rgba(255, 240, 200, 0.2), transparent 70%); pointer-events: none; }
+  .glass::after { content: ""; position: absolute; left: 11%; top: -12%; width: 9%; height: 135%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); transform: rotate(-18deg); box-shadow: 70px 0 0 -28px rgba(255, 255, 255, 0.07); pointer-events: none; z-index: 5; }
+  .g-row { position: relative; display: grid; grid-template-columns: clamp(84px, 14%, 119px) minmax(0, 1fr); align-items: start; padding: 0 0 16px; }
+  .g-label { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 8px 0 0; margin: 2px 12px 0 0; border-right: 1.5px solid rgba(216, 178, 94, 0.3); min-height: 92px; }
+  .g-label b { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(180deg, #f6e2a4, #c9a04a 80%, #b8923f); color: #16213a; font: 900 24px/1 var(--font-bricolage); box-shadow: 0 5px 6px rgba(0, 0, 0, 0.38), inset 0 -3px 5px rgba(120, 85, 20, 0.35); }
+  .g-label span { font: 800 10px/1.25 var(--font-bricolage); letter-spacing: 0.08em; color: #d8b25e; text-align: center; white-space: nowrap; }
+  .g-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 10px; padding: 3px 0 0; }
+
+  .cell { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .tile { all: unset; box-sizing: border-box; position: relative; display: block; width: var(--t); height: var(--t); cursor: pointer; border-radius: 20px; box-shadow: 0 5px 8px rgba(0, 0, 0, 0.4); transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.4, 1), opacity 0.3s, box-shadow 0.3s; }
+  .tile img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 20px; transition: opacity 0.25s; }
+  /* spring coils sit in front of the lower part of the tile */
+  .coil { position: absolute; left: 50%; bottom: -3px; width: 114%; height: 27px; transform: translateX(-50%); pointer-events: none; z-index: 2;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 86 27'%3E%3Cg fill='none' stroke='%23d8b25e' stroke-width='1.4' opacity='.8'%3E%3Cellipse cx='43' cy='4.5' rx='41.5' ry='3.6'/%3E%3Cellipse cx='43' cy='10.5' rx='41.5' ry='3.6'/%3E%3Cellipse cx='43' cy='16.5' rx='41.5' ry='3.6'/%3E%3Cellipse cx='43' cy='22.5' rx='41.5' ry='3.6'/%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+  .ledge { display: block; width: calc(var(--t) * 1.158); max-width: 100%; height: 6px; margin-top: 2px; border-radius: 3px; background: linear-gradient(180deg, #f6e2a4, #8f6f2e); position: relative; z-index: 1; }
+  .lab { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px; width: min(104px, 100%); height: 20px; margin-top: 4px; padding: 0 9px; border-radius: 10px; background: #f6ebcb; color: #16213a; white-space: nowrap; transition: opacity 0.3s; }
+  .lab em { font: 900 10px/1 var(--font-bricolage); font-style: normal; color: #b8892b; }
+  .lab b { font: 500 11px/1 var(--font-bricolage); overflow: hidden; text-overflow: ellipsis; }
+  .tile:hover { transform: translateY(-3px); box-shadow: 0 9px 12px rgba(0, 0, 0, 0.4); }
+  .tile:focus-visible { outline: 3px solid #f7ce5b; outline-offset: 4px; }
+
+  /* empty slots */
+  .cell.empty .slot { position: relative; display: grid; place-items: center; width: var(--t); height: var(--t); border: 2px dashed rgba(216, 178, 94, 0.35); border-radius: 20px; opacity: 0.6; box-sizing: border-box; }
+  .cell.empty .plus { font: 900 34px/1 var(--font-bricolage); color: rgba(216, 178, 94, 0.5); }
+  .cell.empty .ledge { opacity: 0.5; }
+  .stack.no-empty .cell.empty { visibility: hidden; }
+  /* v2: own background (butter) so it no longer matches Brands & websites; torn edge into that section */
+  .stack.no-empty { background: #fdeab8; }
+  .stack .edge { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 36px; fill: #fff3e6; pointer-events: none; }
+  .lab.soon { display: block; text-align: center; padding: 0; background: rgba(246, 235, 203, 0.25); color: rgba(246, 235, 203, 0.75); font: 400 15px/20px var(--font-hand); }
+
+  /* a pick: its slot empties, everything else dims */
+  .stack.has-pick .cell:not(.empty):not(.pick) .tile,
+  .stack.has-pick .cell:not(.empty):not(.pick) .lab { opacity: 0.55; }
+  .cell.pick .tile { background: rgba(0, 0, 0, 0.25); box-shadow: none; outline: 2px dashed rgba(216, 178, 94, 0.55); outline-offset: -2px; }
+  .cell.pick .tile img { opacity: 0; }
+  .cell.pick .tile:hover { transform: none; }
+
+  /* control panel */
+  .panel { grid-area: panel; position: relative; border: 3px solid rgba(216, 178, 94, 0.7); border-radius: 26px; padding: 18px 18px 14px; background: linear-gradient(180deg, #1c2858, #0b122c); display: flex; flex-direction: column; min-width: 0; }
+  .display { position: relative; height: 100px; padding: 12px 14px; border-radius: 16px; background: #050b19; border: 2px solid rgba(216, 178, 94, 0.55); overflow: hidden; background-image: repeating-linear-gradient(180deg, transparent 0 9px, rgba(255, 255, 255, 0.04) 9px 10px); }
+  .d-k { margin: 0; display: flex; justify-content: space-between; align-items: center; font: 900 10px/1 var(--font-bricolage); letter-spacing: 0.2em; color: rgba(216, 178, 94, 0.85); }
+  .d-k i { width: 8px; height: 8px; border-radius: 50%; background: #4be38a; box-shadow: 0 0 8px 2px rgba(75, 227, 138, 0.7); }
+  .d-name { margin: 10px 0 0; font: 900 clamp(19px, 1.7vw, 24px)/30px var(--font-bricolage); color: #f4c95d; text-shadow: 0 0 10px rgba(244, 201, 93, 0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .d-sub { margin: 8px 0 0; font: 500 12px/1.2 var(--font-bricolage); color: rgba(216, 178, 94, 0.85); }
+  .keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 26px 0 32px; }
+  .key { all: unset; box-sizing: border-box; display: grid; place-items: center; height: 46px; border-radius: 13px; cursor: pointer; background: linear-gradient(180deg, #f4ebd2, #d9cca8); color: #16213a; font: 900 18px/1 var(--font-bricolage); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); transition: transform 0.1s, box-shadow 0.15s, background 0.2s; }
+  .key:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45); }
+  .key:focus-visible { outline: 3px solid #f7ce5b; outline-offset: 2px; }
+  .key.lit { background: linear-gradient(180deg, #ffe08a, #e9b83f); transform: translateY(3px); box-shadow: 0 0 6px rgba(244, 201, 93, 0.7); }
+  .p-k { margin: 0 0 10px; text-align: center; font: 900 10px/1 var(--font-bricolage); letter-spacing: 0.2em; color: rgba(216, 178, 94, 0.85); }
+  .p-receipt { margin-top: 38px; }
+  .slot-bar { display: block; border-radius: 7px; background: #03070f; border: 1.5px solid rgba(216, 178, 94, 0.7); position: relative; z-index: 1; }
+  .coin { width: 90px; height: 12px; margin: 0 auto; border-radius: 6px; }
+  .rslot { height: 14px; }
+
+  /* receipt prints out of the slot */
+  .rclip { position: relative; z-index: 2; margin: -7px 20px 0; padding: 0 0 18px; overflow: hidden; min-height: 14px; }
+  .paper { position: relative; background: #fffdf6; padding: 12px 16px 12px; filter: drop-shadow(0 8px 7px rgba(0, 0, 0, 0.4)); transform: translateY(-101%); transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  .paper.out { transform: none; }
+  .paper::after { content: ""; position: absolute; left: 0; right: 0; bottom: -9px; height: 10px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12.4' height='10' viewBox='0 0 12.4 10'%3E%3Cpolygon points='0,0 12.4,0 6.2,10' fill='%23fffdf6'/%3E%3C/svg%3E") 0 0 / 12.4px 10px repeat-x; }
+  .paper p { margin: 0; }
+  .r-top { font: 900 8px/1 var(--font-bricolage); letter-spacing: 0.2em; color: rgba(22, 33, 58, 0.45); }
+  .r-order { margin-top: 8px !important; font: 900 11px/1 var(--font-bricolage); letter-spacing: 0.18em; color: #b8892b; }
+  .r-name { margin-top: 6px !important; font: 900 26px/30px var(--font-bricolage); color: #16213a; }
+  .paper hr { border: 0; height: 1px; margin: 8px 0; background: rgba(22, 33, 58, 0.25); }
+  .r-desc { font: 400 13px/18px var(--font-bricolage); color: rgba(22, 33, 58, 0.85); min-height: 36px; }
+  .r-total { font: 500 11px/1 var(--font-bricolage); color: rgba(22, 33, 58, 0.7); margin-top: 2px !important; }
+  .barcode { display: block; height: 20px; margin: 10px 0 0; background: repeating-linear-gradient(90deg, rgba(22, 33, 58, 0.8) 0 2px, transparent 2px 4px, rgba(22, 33, 58, 0.8) 4px 5px, transparent 5px 8px, rgba(22, 33, 58, 0.8) 8px 11px, transparent 11px 13px, rgba(22, 33, 58, 0.8) 13px 14px, transparent 14px 17px); }
+  .r-more { margin-top: 4px !important; white-space: nowrap; font: 400 16px/1.1 var(--font-hand); color: #e8663d; }
+
+  /* dispense tray */
+  .tray { grid-area: tray; position: relative; border: 3px solid rgba(216, 178, 94, 0.7); border-radius: 22px; background: linear-gradient(180deg, #04081a, #101a36); min-height: 136px; overflow: hidden; }
+  .tray .shade { position: absolute; left: 0; right: 0; top: 0; height: 14px; background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent); }
+  .tray .p-k { position: relative; margin: 7px 0 0; font-size: 11px; letter-spacing: 0.27em; color: rgba(216, 178, 94, 0.9); z-index: 2; }
+  .tray-in { position: absolute; inset: 0; }
+  .tray-hint { position: absolute; left: 0; right: 0; top: 52%; margin: 0; text-align: center; font: 400 26px/1 var(--font-hand); color: rgba(216, 178, 94, 0.8); }
+  .dispensed { position: absolute; inset: 0; }
+  .glow { position: absolute; left: 50%; top: 0; width: 220px; height: 130px; transform: translateX(-50%); background: radial-gradient(ellipse at 50% 50%, rgba(255, 196, 120, 0.4), rgba(255, 196, 120, 0) 68%); }
+  .star { position: absolute; background: #f6d77a; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 0 4px rgba(246, 215, 122, 0.8)); animation: twinkle 2.6s ease-in-out infinite; }
+  .star:nth-of-type(even) { animation-delay: -1.3s; }
+  @keyframes twinkle { 50% { opacity: 0.45; transform: scale(0.8); } }
+  .dtile { position: absolute; left: 50%; top: 26px; width: 96px; height: 96px; margin-left: -48px; border-radius: 25px; box-shadow: 0 5px 8px rgba(0, 0, 0, 0.4); transform: rotate(6deg); }
+  .dtile img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 25px; }
+  .dispensed.fall .dtile { animation: fall 0.7s cubic-bezier(0.3, 1.4, 0.4, 1); }
+  @keyframes fall { from { transform: translateY(-110px) rotate(-14deg); opacity: 0; } 60% { opacity: 1; } to { transform: rotate(6deg); } }
+
+  .feet { display: flex; justify-content: space-between; padding: 0 60px; position: absolute; left: 0; right: 0; bottom: -23px; }
+  .feet i { width: 80px; height: 18px; border-radius: 0 0 8px 8px; background: #1b2a62; }
+  .more { margin: clamp(40px, 4vw, 56px) 0 0; text-align: center; font: 400 clamp(20px, 2vw, 27px)/1 var(--font-hand); color: #b58612; }
+
+  /* phones: the machine is desktop / tablet only */
+  @media (max-width: 767px) { .stack { display: none; } }
+  @media (max-width: 1100px) {
+    .g-label span { display: none; }
+    .g-label { min-height: 0; }
+    .g-row { grid-template-columns: 64px minmax(0, 1fr); }
+    .glass { padding: 18px 10px 4px 12px; }
+    .g-tiles { gap: 0 6px; }
+    .coins { display: none; }
+  }
+  @media (max-width: 900px) {
+    .body { grid-template-columns: 1fr; grid-template-areas: "panel" "glass" "tray"; }
+    .keys, .p-k:not(.tray .p-k), .slot-bar, .rclip { display: none; }
+    .panel { padding: 14px; }
+    .display { height: auto; min-height: 84px; }
+    .g-row { grid-template-columns: 54px minmax(0, 1fr); padding-bottom: 14px; }
+    .g-label { padding-right: 8px; margin-right: 8px; } .g-label b { width: 36px; height: 36px; font-size: 18px; }
+    .g-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 6px; }
+    .stack { --t: 58px; } .cell.empty { display: none; }
+    .lab { font-size: 10px; padding: 0 8px; } .lab em { display: none; } .lab b { text-align: center; }
+    .lights { display: none; } .top-bar { justify-content: center; } .plate { padding: 9px 16px; letter-spacing: 0.1em; font-size: 10px; }
+    .machine { border-radius: 34px; } .bevel { border-radius: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .key, .paper, .dispensed.fall .dtile, .star { animation: none; transition: none; }
+    .paper { transform: none; }
+  }
+</style>
